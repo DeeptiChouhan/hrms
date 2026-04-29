@@ -14,7 +14,7 @@ class LoginPage:
         self.password_required_error = page.locator('text=Password is required')
         self.invalid_email_format_error = page.locator('text=Email is not valid')
         
-    def login(self, email, password):
+    def login(self,email, password):
         self.email_input.fill(email)
         self.password_input.fill(password)
 
@@ -40,22 +40,22 @@ class LoginPage:
         self.validate_login()
 
     #Valid username + invalid password → login failure
-    def invalid_password(self, email, password):
-        self.login(email, password)
+    def invalid_password(self):    
+        self.login("deepti.chouhan@encoresky.com", "Invalid@123")
         self.click_login()
         #self.error_message.wait_for(state="visible")
         expect(self.error_message).to_be_visible()
 
 
     #Invalid username + valid password → login failure
-    def invalid_email(self, email, password):
-        self.login(email, password)
+    def invalid_email(self):
+        self.login("invalid.email@encoresky.com", "Test@123")
         self.click_login()
         expect(self.error_message).to_be_visible()
 
     #Invalid username + invalid password → login failure
-    def invalid_login(self, email, password):
-        self.login(email, password)
+    def invalid_login(self):
+        self.login("invalid.email@encoresky.com", "Invalid@123")
         self.click_login()
         expect(self.error_message).to_be_visible()
 
