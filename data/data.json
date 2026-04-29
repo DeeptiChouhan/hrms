@@ -1,0 +1,22 @@
+[
+    {
+        "email": "deepti.chouhan@encoresky.com",
+        "password": "Test@123",
+        "expected": "pass"
+    },
+    {
+        "email": "deepti.chouhan@encoresky.com",
+        "password": "Invalid123",
+        "expected": "fail"
+    },
+    {
+        "email": "invalid@mail.com",
+        "password": "Test@123",
+        "expected": "fail"
+    },
+    {
+        "email": "  ",
+        "password": "",
+        "expected": "fail"
+    }
+]
