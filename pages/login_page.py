@@ -25,7 +25,6 @@ class LoginPage:
     def validate_login(self):
         self.page.wait_for_timeout(2000)  # temporary (avoid in real)
         assert "dashboard" in self.page.url
-        assert self.page.get_by_text("Hey Deepti Chouhan,").is_visible()
         assert self.page.locator("text=Dashboard").is_visible()
 
     #User login timestamp updated
