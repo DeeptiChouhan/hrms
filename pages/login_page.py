@@ -34,28 +34,28 @@ class LoginPage:
         print("Last Login Timestamp:", timestamp)   
 
     #Valid username + valid password → login success
-    def valid_login(self):
-        self.login("deepti.chouhan@encoresky.com", "Test@123")
+    def valid_login(self, email, password):
+        self.login(email, password)
         self.click_login()
         self.validate_login()
 
     #Valid username + invalid password → login failure
-    def invalid_password(self):    
-        self.login("deepti.chouhan@encoresky.com", "Invalid@123")
+    def invalid_password(self, email, password):
+        self.login(email, password)
         self.click_login()
         #self.error_message.wait_for(state="visible")
         expect(self.error_message).to_be_visible()
 
 
     #Invalid username + valid password → login failure
-    def invalid_email(self):
-        self.login("invalid.email@encoresky.com", "Test@123")
+    def invalid_email(self, email, password):
+        self.login(email, password)
         self.click_login()
         expect(self.error_message).to_be_visible()
 
     #Invalid username + invalid password → login failure
-    def invalid_login(self):
-        self.login("invalid.email@encoresky.com", "Invalid@123")
+    def invalid_login(self, email, password):
+        self.login(email, password)
         self.click_login()
         expect(self.error_message).to_be_visible()
 

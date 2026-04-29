@@ -5,3 +5,5 @@ venv/
 playwright-report/
 test-results/
 .pytest_cache/
+report.html
+allure-results/
