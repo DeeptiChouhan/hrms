@@ -7,3 +7,15 @@ test-results/
 .pytest_cache/
 report.html
 allure-results/
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Optional (recommended full Python ignores)
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+venv/
+env/
