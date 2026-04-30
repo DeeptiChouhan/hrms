@@ -6,7 +6,7 @@ allure-report/
 __pycache__/
 *.py[codz]
 *$py.class
-
+report.html
 # C extensions
 *.so
 
