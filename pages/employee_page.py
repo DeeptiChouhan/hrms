@@ -1,5 +1,4 @@
 import re
-from click import option
 from playwright.sync_api import Page, expect
 from datetime import datetime, timedelta
 
