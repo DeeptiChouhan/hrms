@@ -1,23 +1,27 @@
+# This workflow runs Playwright tests on push to the main branch.
+#name: Playwright Tests(Workflow name shown in UI)
 name: Playwright Tests
 
+# Trigger the workflow on push to the main branch
 on:
   push:
     branches: [ main ]
 
+# Define the job to run the tests
 jobs:
   test:
-    runs-on: ubuntu-latest
-
+    runs-on: ubuntu-latest # runs-on: The type of runner to run the job on. In this case, it uses the latest version of Ubuntu.
+    # The steps to run the tests
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3 #Uses a pre-built GitHub Action to check out the repository code so that it can be used in the workflow.
 
       - name: Install Python
         uses: actions/setup-python@v4
         with:
           python-version: 3.11
 
-      - name: Install dependencies
+      - name: Install dependencies  #Runs a custom command to install the required dependencies for the tests. It uses pip to install the packages listed in the requirements.txt file, as well as pytest, pytest-html, and Playwright. After installing Playwright, it runs the command to install the necessary browsers for testing.
         run: |
           pip install -r requirements.txt
           pip install pytest pytest-html playwright

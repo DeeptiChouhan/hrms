@@ -2,6 +2,7 @@
 # Allure reports
 allure-results/
 allure-report/
+screenshots/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

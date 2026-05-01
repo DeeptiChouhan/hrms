@@ -14,7 +14,7 @@ class LoginPage:
         self.password_required_error = page.locator('text=Password is required')
         self.invalid_email_format_error = page.locator('text=Email is not valid')
         
-    def login(self,email, password):
+    def login_input(self,email, password):
         self.email_input.fill(email)
         self.password_input.fill(password)
 
@@ -34,28 +34,21 @@ class LoginPage:
         print("Last Login Timestamp:", timestamp)   
 
     #Valid username + valid password → login success
-    def valid_login(self, email, password):
-        self.login(email, password)
+    def login(self, email, password):
+        self.login_input(email, password)
         self.click_login()
         self.validate_login()
 
     #Valid username + invalid password → login failure
     def invalid_password(self):    
-        self.login("deepti.chouhan@encoresky.com", "Invalid@123")
+        self.login_input("deepti.chouhan@encoresky.com", "Invalid@123")
         self.click_login()
         #self.error_message.wait_for(state="visible")
         expect(self.error_message).to_be_visible()
 
-
     #Invalid username + valid password → login failure
     def invalid_email(self):
-        self.login("invalid.email@encoresky.com", "Test@123")
-        self.click_login()
-        expect(self.error_message).to_be_visible()
-
-    #Invalid username + invalid password → login failure
-    def invalid_login(self):
-        self.login("invalid.email@encoresky.com", "Invalid@123")
+        self.login_input("invalid.email@encoresky.com", "Test@123")
         self.click_login()
         expect(self.error_message).to_be_visible()
 
@@ -72,6 +65,11 @@ class LoginPage:
         expect(self.password_required_error).to_be_visible()
 
     def invalid_email_format(self):
-        self.login("deepti.chouhan@encoreskycom", "Test@123")
+        self.login_input("deepti.chouhan@encoreskycom", "Test@123")
         self.click_login()
         expect(self.invalid_email_format_error).to_be_visible()
+
+    def wrong_creds(self):
+        self.login_input("deepti.chouihan+9ei3@encoresky.com", "Test@12334")
+        self.click_login()
+        expect(self.error_message).to_be_visible()
