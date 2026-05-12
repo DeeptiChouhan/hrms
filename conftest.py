@@ -1,50 +1,44 @@
-import pytest
-import os
+from pathlib import Path
 import allure
+import pytest
 from playwright.sync_api import sync_playwright
-from utils.env_config import get_headless_value
 from utils.data_reader import load_config
+from utils.env_config import get_headless_value
+VIEWPORT = {"width": 1366, "height": 900}
+SCREENSHOT_DIR = Path("screenshots")
 
-# 🔹 Page Fixture
 @pytest.fixture
 def page():
+    """Chromium page: headed locally, headless on CI (see ``get_headless_value``)."""
     headless = get_headless_value()
     config = load_config()
+    base_url = config["base_url"]
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=headless)
-        #fullscreen for better visibility and to avoid viewport issues
-        # Taller viewport so long MUI forms (dates + document block + footer) stay reachable.
-        context = browser.new_context(viewport={"width": 1366, "height": 900})
-        page = context.new_page()
-
-        page.goto(config["base_url"])
-
-        yield page
-
+        context = browser.new_context(viewport=VIEWPORT)
+        pg = context.new_page()
+        pg.goto(base_url)
+        yield pg
         browser.close()
 
-# 🔹 Screenshot on Failure + Allure Attachment
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
     outcome = yield
     report = outcome.get_result()
 
-    # Take screenshot only if test FAILED
-    if report.when == "call" and report.failed:
-        page = item.funcargs.get("page", None)
+    if report.when != "call" or not report.failed:
+        return
 
-        if page:
-            screenshot_dir = "screenshots"
-            os.makedirs(screenshot_dir, exist_ok=True)
+    pg = item.funcargs.get("page")
+    if not pg:
+        return
 
-            file_name = f"{item.name}.png"
-            file_path = os.path.join(screenshot_dir, file_name)
-
-            page.screenshot(path=file_path)
-
-            # Attach screenshot to Allure report
-            allure.attach.file(
-                file_path,
-                name="Failure Screenshot",
-                attachment_type=allure.attachment_type.PNG
-            )
+    SCREENSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    path = SCREENSHOT_DIR / f"{item.name}.png"
+    pg.screenshot(path=str(path))
+    allure.attach.file(
+        str(path),
+        name="Failure Screenshot",
+        attachment_type=allure.attachment_type.PNG,
+    )

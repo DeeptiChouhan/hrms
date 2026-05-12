@@ -1,79 +1,52 @@
 import re
-
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError, expect
+from utils.playwright_patterns import (
+    SEARCH_DEBOUNCE_MS,
+    data_row_with_text,
+    delete_row_via_action_menu,
+    list_search_locator,
+    mui_footer_save_locator,
+)
 
-
+# Single source for designation used in this suite (list + form).
+DESIGNATION_NAME = "Test_Developer"
 class DesignationPage:
-
-    def __init__(self, page: Page):
+    """Designations list + create form."""
+    def __init__(self, page: Page) -> None:
         self.page = page
         self.designations_menu = page.get_by_role("link", name=re.compile(r"designations?", re.I))
         self.add_designation_btn = page.get_by_role(
-            "button", name=re.compile(r"(^\s*\+?\s*add\b)|(\badd\s+designation\b)", re.I)
+            "button",
+            name=re.compile(r"(^\s*\+?\s*add\b)|(\badd\s+designation\b)", re.I),
         )
         self.designation_form = page.locator("form").filter(has=page.locator('input[name="name"]')).first
         self.name_input = self.designation_form.locator('input[name="name"]')
         self.description_input = self.designation_form.locator(
             'textarea[name="description"], input[name="description"]'
         )
-        self.cancel_button = page.get_by_role("button", name=re.compile(r"^cancel$", re.I)).first
-        self.save_button = self.cancel_button.locator(
-            "xpath=ancestor::*[.//button[normalize-space()='Save']][1]//button[normalize-space()='Save']"
-        ).or_(page.get_by_role("button", name=re.compile(r"^save$", re.I)))
+        self.save_button = mui_footer_save_locator(page)
+    _url_create = re.compile(r".*/designations?/create/?(\?.*)?$", re.I)
 
-        self.alert_messages = page.locator("[role='alert'], .MuiAlert-message")
-        self.field_errors = page.locator(".MuiFormHelperText-root.Mui-error, [role='alert']")
+    def navigate_to_designations_list(self) -> None:
+        self.designations_menu.first.click()
+        expect(self.add_designation_btn.first).to_be_visible(timeout=20_000)
 
-        self.designation_list_rows = page.locator("table tbody tr, [role='row']")
-
-    def _list_search_input(self):
-        """Toolbar search (placeholder Search... / Search..)."""
-        return self.page.get_by_placeholder(re.compile(r"Search\.+", re.I))
-
-    def _designation_row(self, name: str):
-        """Body row that shows this designation name (table or MUI DataGrid)."""
-        pat = re.compile(re.escape(name), re.I)
-        table_row = self.page.locator("tbody tr").filter(has_text=pat)
-        grid_row = self.page.locator('[role="row"]').filter(has=self.page.locator('[role="gridcell"]')).filter(
-            has_text=pat
-        )
-        return table_row.or_(grid_row).first
-
-    def _open_row_actions_and_delete(self, row):
-        """Row kebab / icon button (often aria-haspopup) then Delete menu item."""
-        menu_trigger = row.locator('button[aria-haspopup="true"]')
-        if menu_trigger.count() > 0:
-            menu_trigger.last.click()
-        else:
-            row.locator("button:has(svg)").last.click()
-        self.page.get_by_role("menuitem", name=re.compile(r"delete", re.I)).first.click()
-        # Optional confirmation dialog
-        dialog_delete = self.page.get_by_role("dialog").get_by_role(
-            "button", name=re.compile(r"delete", re.I)
-        )
-        try:
-            dialog_delete.click(timeout=3_000)
-        except PlaywrightTimeoutError:
-            pass
-
-    def delete_designation_if_exists(self, name: str = "Test_Developer") -> None:
-        """
-        On the designations list: search by name; if a row is shown, open row actions and delete.
-        """
-        search = self._list_search_input()
+    def delete_designation_if_exists(self, name: str = DESIGNATION_NAME) -> None:
+        search = list_search_locator(self.page)
         expect(search).to_be_visible(timeout=15_000)
         search.click()
         search.fill("")
         search.fill(name)
         self.page.keyboard.press("Enter")
+        self.page.wait_for_timeout(SEARCH_DEBOUNCE_MS)
 
-        row = self._designation_row(name)
+        row = data_row_with_text(self.page, name)
         try:
             row.wait_for(state="visible", timeout=5_000)
         except PlaywrightTimeoutError:
             return
 
-        self._open_row_actions_and_delete(row)
+        delete_row_via_action_menu(self.page, row)
         try:
             expect(row).not_to_be_visible(timeout=15_000)
         except AssertionError:
@@ -82,22 +55,16 @@ class DesignationPage:
             except PlaywrightTimeoutError:
                 pass
 
-    def add_designation(self):
-        self.designations_menu.first.click()
-        expect(self.add_designation_btn.first).to_be_visible(timeout=20_000)
-
-        self.delete_designation_if_exists("Test_Developer")
-
+    def add_designation(self) -> None:
+        self.navigate_to_designations_list()
+        self.delete_designation_if_exists(DESIGNATION_NAME)
         self.add_designation_btn.first.click()
-        self.page.wait_for_url(re.compile(r".*/designations?/create/?(\?.*)?$", re.I), timeout=20_000)
-        expect(self.page).to_have_url(re.compile(r".*/designations?/create/?(\?.*)?$", re.I))
+        self.page.wait_for_url(self._url_create, timeout=20_000)
+        expect(self.page).to_have_url(self._url_create)
+
         self.name_input.click()
-        self.name_input.fill("Test_Developer")
+        self.name_input.fill(DESIGNATION_NAME)
         self.description_input.click()
         self.description_input.fill("Develops and maintains software applications")
-        save_btn = self.save_button.first
-        save_btn.click()
-        expect(self.page).not_to_have_url(
-            re.compile(r".*/designations?/create/?(\?.*)?$", re.I),
-            timeout=20_000,
-        )
+        self.save_button.first.click()
+        expect(self.page).not_to_have_url(self._url_create, timeout=20_000)
