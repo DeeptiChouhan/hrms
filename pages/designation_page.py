@@ -56,7 +56,7 @@ class DesignationPage:
         except PlaywrightTimeoutError:
             pass
 
-    def delete_designation_if_exists(self, name: str = "Developer") -> None:
+    def delete_designation_if_exists(self, name: str = "Test_Developer") -> None:
         """
         On the designations list: search by name; if a row is shown, open row actions and delete.
         """
@@ -86,13 +86,13 @@ class DesignationPage:
         self.designations_menu.first.click()
         expect(self.add_designation_btn.first).to_be_visible(timeout=20_000)
 
-        self.delete_designation_if_exists("Developer")
+        self.delete_designation_if_exists("Test_Developer")
 
         self.add_designation_btn.first.click()
         self.page.wait_for_url(re.compile(r".*/designations?/create/?(\?.*)?$", re.I), timeout=20_000)
         expect(self.page).to_have_url(re.compile(r".*/designations?/create/?(\?.*)?$", re.I))
         self.name_input.click()
-        self.name_input.fill("Developer")
+        self.name_input.fill("Test_Developer")
         self.description_input.click()
         self.description_input.fill("Develops and maintains software applications")
         save_btn = self.save_button.first
