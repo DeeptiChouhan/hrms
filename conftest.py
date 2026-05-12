@@ -2,22 +2,26 @@ import pytest
 import os
 import allure
 from playwright.sync_api import sync_playwright
-
+from utils.env_config import get_headless_value
+from utils.data_reader import load_config
 
 # 🔹 Page Fixture
 @pytest.fixture
 def page():
+    headless = get_headless_value()
+    config = load_config()
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)  # CI-safe
-        context = browser.new_context()
+        browser = p.chromium.launch(headless=False)  # CI-safe
+        #fullscreen for better visibility and to avoid viewport issues
+        # Taller viewport so long MUI forms (dates + document block + footer) stay reachable.
+        context = browser.new_context(viewport={"width": 1366, "height": 900})
         page = context.new_page()
 
-        page.goto("https://hrms.eznity.ai")
+        page.goto(config["base_url"])
 
         yield page
 
         browser.close()
-
 
 # 🔹 Screenshot on Failure + Allure Attachment
 @pytest.hookimpl(hookwrapper=True)

@@ -2,17 +2,17 @@
 #name: Playwright Tests(Workflow name shown in UI)
 name: Playwright Tests
 
-# Trigger the workflow on push to the main branch
+# Trigger the workflow on push to the main branch, When to run (trigger)
 on:
   push:
     branches: [ main ]
 
 # Define the job to run the tests
-jobs:
+jobs: #What to run (jobs)
   test:
     runs-on: ubuntu-latest # runs-on: The type of runner to run the job on. In this case, it uses the latest version of Ubuntu.
     # The steps to run the tests
-    steps:
+    steps: #How to run (steps)
       - name: Checkout code
         uses: actions/checkout@v3 #Uses a pre-built GitHub Action to check out the repository code so that it can be used in the workflow.
 

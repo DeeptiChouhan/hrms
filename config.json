@@ -1,0 +1,6 @@
+{
+    "base_url": "https://hrms.eznity.ai",
+    "browser": "chromium",
+    "headless": true,
+    "timeout": 5000
+}
