@@ -1,5 +1,3 @@
-import uuid
-
 from pages.login_page import LoginPage
 from pages.designation_page import DesignationPage
 from utils.env_config import EMAIL, PASSWORD
