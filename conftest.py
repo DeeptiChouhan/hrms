@@ -11,7 +11,7 @@ def page():
     headless = get_headless_value()
     config = load_config()
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)  # CI-safe
+        browser = p.chromium.launch(headless=headless)
         #fullscreen for better visibility and to avoid viewport issues
         # Taller viewport so long MUI forms (dates + document block + footer) stay reachable.
         context = browser.new_context(viewport={"width": 1366, "height": 900})

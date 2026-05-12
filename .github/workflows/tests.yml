@@ -28,4 +28,7 @@ jobs: #What to run (jobs)
           playwright install
 
       - name: Run tests
+        env:
+          # Explicit headed/headless: local default is headed; CI uses headless (no display on ubuntu).
+          HEADLESS: "true"
         run: pytest
