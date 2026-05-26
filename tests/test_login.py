@@ -19,6 +19,5 @@ def test_empty_email(page):
 def test_empty_password(page):
     LoginPage(page).assert_password_required_error()
 
-
 def test_invalid_email_format(page):
     LoginPage(page).invalid_email_format()

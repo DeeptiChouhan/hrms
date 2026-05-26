@@ -155,8 +155,13 @@ activemq-data/
 *.sage.py
 
 # Environments
+.env
 .envrc
 .venv
+
+# Gmail OAuth for invite tests (never commit)
+gmail_token.json
+credentials.json
 env/
 venv/
 ENV/

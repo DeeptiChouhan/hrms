@@ -14,6 +14,24 @@ def normalize_work_email(work_email: str) -> str:
     """HRMS stores work emails lowercased; delete lookup must match."""
     return work_email.strip().lower()
 
+
+def employee_login_email_variants(email: str) -> list[str]:
+    """
+    Login attempts to try in order: normalized address, then local-part without +alias.
+
+    Some auth stacks treat ``user+tag@domain`` differently at login vs invite provisioning.
+    """
+    n = normalize_work_email(email)
+    out: list[str] = [n]
+    if "@" not in n:
+        return out
+    local, domain = n.split("@", 1)
+    if "+" in local:
+        base = f"{local.split('+', 1)[0]}@{domain}"
+        if base not in out:
+            out.append(base)
+    return out
+
 def _response_json(resp: requests.Response) -> dict[str, Any]:
     try:
         body = resp.json()

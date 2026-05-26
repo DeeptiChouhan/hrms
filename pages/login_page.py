@@ -1,11 +1,18 @@
 import re
+
 from playwright.sync_api import Page, expect
+
+from utils.config import BASE_URL
+
+
 class LoginPage:
     """Login screen and negative-path checks."""
 
     def __init__(self, page: Page) -> None:
         self.page = page
-        self.email_input = page.locator('input[type="Email"]')
+        self.email_input = page.locator(
+            'input[name="email"], input[type="Email"], input[type="email"]'
+        ).first
         self.password_input = page.locator('input[type="password"]')
         self.sign_in_button = page.locator('button:has-text("Sign in")')
         self.error_message = page.locator("text=Invalid credentials")
@@ -15,6 +22,10 @@ class LoginPage:
         self.invalid_email_format_error = page.locator("text=Email is not valid")
 
     def login_input(self, email: str, password: str) -> None:
+        self.email_input.click(timeout=10_000)
+        self.email_input.clear()
+        self.password_input.click(timeout=10_000)
+        self.password_input.clear()
         self.email_input.fill(email)
         self.password_input.fill(password)
 
@@ -24,6 +35,10 @@ class LoginPage:
     def validate_login(self) -> None:
         expect(self.page).to_have_url(re.compile(r"dashboard", re.I), timeout=20_000)
         expect(self.page.get_by_role("link", name="Dashboard")).to_be_visible()
+
+    def navigate_to_sign_in(self) -> None:
+        self.page.goto(f"{BASE_URL.rstrip('/')}/sign-in", wait_until="domcontentloaded")
+        expect(self.email_input).to_be_visible(timeout=15_000)
 
     def login(self, email: str, password: str) -> None:
         self.login_input(email, password)
