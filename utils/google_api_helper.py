@@ -126,18 +126,22 @@ def fetch_invitation_accept_url_from_gmail(
     timeout_s: float = 120.0,
     max_messages_per_poll: int = 20,
     invite_link_hints: tuple[str, ...] | None = None,
+    not_before_ms: int | None = None,
 ) -> str:
     """Poll Gmail for an invite URL.
 
-    When ``invite_link_hints`` is set (e.g. work + personal email), only messages whose
-    body/snippet contain at least one hint are considered, and the **newest** match by
-    ``internalDate`` is returned. That avoids reusing an old invite token from an earlier
-    employee or test run.
+    ``invite_link_hints``: only messages whose body contains at least one hint are
+    considered (prevents picking up invites for a different employee).
+
+    ``not_before_ms``: Gmail ``internalDate`` lower bound (epoch-milliseconds).
+    Pass ``int(time.time() * 1000)`` captured just before ``add_employee()`` so that
+    an older invite token from a previous run of the same email is never reused.
     """
     service = build_gmail_service(credentials_path=credentials_path, token_path=token_path)
     q = (list_query or os.getenv("GMAIL_INVITE_LIST_QUERY", "").strip() or "newer_than:1d").strip()
     deadline = time.monotonic() + timeout_s
     hints = tuple(h.strip() for h in (invite_link_hints or ()) if (h or "").strip())
+    min_ts = int(not_before_ms) if not_before_ms is not None else 0
 
     while time.monotonic() < deadline:
         resp = (
@@ -156,13 +160,15 @@ def fetch_invitation_accept_url_from_gmail(
                 .get(userId="me", id=mid, format="full")
                 .execute()
             )
+            internal = int(full.get("internalDate") or "0")
+            if internal < min_ts:
+                continue
             text = _message_body_text(full)
             if not _invite_body_matches_hints(text, hints):
                 continue
             url = find_invitation_accept_url_in_text(app_base_url, text)
             if not url:
                 continue
-            internal = int(full.get("internalDate") or "0")
             if internal > best_internal:
                 best_internal = internal
                 best_url = url

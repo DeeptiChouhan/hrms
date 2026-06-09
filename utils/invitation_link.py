@@ -106,8 +106,14 @@ def resolve_invitation_accept_url(
     mailinator_inbox_local: str | None = None,
     timeout_s: int = 120,
     invite_link_hints: Sequence[str] | None = None,
+    not_before_ms: int | None = None,
 ) -> str:
-    """Resolve URL: INVITATION_ACCEPT_URL, else Gmail OAuth files, else Mailinator."""
+    """Resolve URL: INVITATION_ACCEPT_URL, else Gmail OAuth files, else Mailinator.
+
+    ``not_before_ms``: epoch-milliseconds lower bound for the invite email's arrival time.
+    Capture ``int(time.time() * 1000)`` just before ``add_employee()`` and pass it here so
+    an older invite from a previous test run with the same email is never reused.
+    """
     hints_tuple = _invite_hints_tuple(invite_link_hints)
     explicit = _merged_invitation_accept_url()
     if explicit:
@@ -127,6 +133,7 @@ def resolve_invitation_accept_url(
                 token_path=_gt,
                 timeout_s=timeout_s,
                 invite_link_hints=hints_tuple if hints_tuple else None,
+                not_before_ms=not_before_ms,
             )
 
     local = (mailinator_inbox_local or _merged_mailinator_local()).strip()
