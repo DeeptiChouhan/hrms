@@ -1,0 +1,10 @@
+{
+  "email": "deepti.chouhan+automation_user@encoresky.com",
+  "password": "Test@123",
+  "leave_type_name": "leave_type_Automation",
+  "leave_type_code": "00A1",
+  "reason_before_weekend": "Automation sandwich leave — Friday before weekend.",
+  "reason_after_weekend": "Automation sandwich leave — Monday after weekend.",
+  "start_session": "First half",
+  "end_session": "Second half"
+}

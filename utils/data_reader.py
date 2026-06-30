@@ -21,3 +21,6 @@ def load_test_data() -> dict[str, Any]:
 
 def load_leave_request_data() -> dict[str, Any]:
     return _read_json(_REPO_ROOT / "test_data" / "leave_request.json")
+
+def load_sandwich_leave_request_data() -> dict[str, Any]:
+    return _read_json(_REPO_ROOT / "test_data" / "sandwich_leave_request.json")

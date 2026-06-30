@@ -14,6 +14,13 @@ from utils.config import LEAVE_MY_REQUESTS_URL, LEAVE_REQUESTS_URL
 logger = logging.getLogger(__name__)
 
 _SKIP_STATUSES = frozenset({"cancelled", "rejected"})
+_SANDWICH_REQUEST_TYPES = frozenset({"sandwich"})
+
+
+def _is_sandwich_leave(leave: dict[str, Any]) -> bool:
+    """Sandwich rows are auto-cancelled when a linked leave is cancelled."""
+    request_type = str(leave.get("requestType") or "").strip().lower()
+    return request_type in _SANDWICH_REQUEST_TYPES
 
 
 def _response_json(resp: requests.Response) -> dict[str, Any]:
@@ -70,6 +77,80 @@ def _list_my_leave_requests(headers: dict[str, str]) -> list[dict[str, Any]]:
     return rows
 
 
+def _leave_overlaps_range(leave: dict[str, Any], range_start: date, range_end: date) -> bool:
+    start_raw = leave.get("startDate")
+    end_raw = leave.get("endDate")
+    if not start_raw or not end_raw:
+        return False
+    start = _parse_iso_date(str(start_raw))
+    end = _parse_iso_date(str(end_raw))
+    return start <= range_end and end >= range_start
+
+
+def cancel_leaves_overlapping_range_if_exist(
+    range_start: date,
+    range_end: date,
+    *,
+    email: str,
+    password: str,
+) -> bool:
+    """Cancel/delete active leaves overlapping ``[range_start, range_end]``."""
+    if range_end < range_start:
+        range_start, range_end = range_end, range_start
+
+    headers = login_auth_headers(email, password)
+    leaves = _list_my_leave_requests(headers)
+    actionable = [
+        row
+        for row in leaves
+        if _leave_overlaps_range(row, range_start, range_end)
+        and str(row.get("status") or "").strip().lower() not in _SKIP_STATUSES
+        and not _is_sandwich_leave(row)
+    ]
+    if not actionable:
+        logger.info(
+            "No cancellable leave between %s and %s; proceeding.",
+            range_start.isoformat(),
+            range_end.isoformat(),
+        )
+        return False
+
+    for leave in actionable:
+        leave_id = str(leave.get("id") or "").strip()
+        if not leave_id:
+            continue
+        status = str(leave.get("status") or "").strip().lower()
+
+        if status == "draft":
+            resp = requests.delete(
+                f"{LEAVE_REQUESTS_URL}/{leave_id}",
+                headers=headers,
+                timeout=60,
+            )
+        elif status in {"pending", "approved", "applied"}:
+            resp = requests.patch(
+                f"{LEAVE_REQUESTS_URL}/{leave_id}/cancel",
+                headers=headers,
+                json={"cancellationReason": "Automation cleanup before recreate"},
+                timeout=60,
+            )
+        else:
+            logger.warning("Unsupported leave status %r for %s; skipping.", status, leave_id)
+            continue
+
+        payload = _response_json(resp)
+        if resp.status_code in (200, 201, 204) and payload.get("success", True):
+            logger.info("Cancelled leave %s (%s).", leave_id, status)
+            continue
+
+        msg = payload.get("message") or resp.text or resp.reason
+        raise RuntimeError(
+            f"Failed to cancel leave request {leave_id!r} ({status}): {msg}"
+        )
+
+    return True
+
+
 def cancel_leave_for_date_if_exists(
     target: date,
     *,
@@ -88,6 +169,7 @@ def cancel_leave_for_date_if_exists(
         row
         for row in matching
         if str(row.get("status") or "").strip().lower() not in _SKIP_STATUSES
+        and not _is_sandwich_leave(row)
     ]
     if not actionable:
         logger.info("No active leave for %s; proceeding to create.", target.isoformat())

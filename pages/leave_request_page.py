@@ -149,3 +149,77 @@ class LeaveRequestPage:
         self.select_end_session(end_session)
         self.fill_reason(reason)
         self.submit_request()
+
+    # --- Sandwich leave scenarios (separate from ``create_leave_request``) ---
+
+    def fill_leave_date_range(self, start_date: date, end_date: date) -> None:
+        """Set start and end date on the leave request form."""
+        self._fill_date_input(self.start_date_input, start_date.strftime("%d-%m-%Y"))
+        self._fill_date_input(self.end_date_input, end_date.strftime("%d-%m-%Y"))
+
+    def assert_sandwich_preview_visible(self) -> None:
+        """Wait for sandwich calculation UI (``LeaveSandwichCalculationPreview``)."""
+        expect(
+            self.page.get_by_text(re.compile(r"sandwich\s*days", re.I)).first
+        ).to_be_visible(timeout=45_000)
+
+    def _submit_sandwich_leave_request(
+        self,
+        *,
+        leave_type_name: str,
+        leave_type_code: str,
+        reason: str,
+        start_date: date,
+        end_date: date,
+        start_session: str,
+        end_session: str,
+        expect_sandwich: bool = False,
+    ) -> None:
+        self.navigate_to_my_requests()
+        self.open_add_request_form()
+        self.select_leave_type(leave_type_name, leave_type_code)
+        self.fill_leave_date_range(start_date, end_date)
+        self.select_start_session(start_session)
+        self.select_end_session(end_session)
+        self.fill_reason(reason)
+        if expect_sandwich:
+            self.assert_sandwich_preview_visible()
+        self.submit_request()
+
+    def create_weekend_sandwich_leaves(
+        self,
+        *,
+        friday: date,
+        monday: date,
+        leave_type_name: str,
+        leave_type_code: str,
+        reason_before_weekend: str,
+        reason_after_weekend: str,
+        start_session: str = "First half",
+        end_session: str = "Second half",
+    ) -> None:
+        """
+        Create two full-day leaves: Friday then Monday with weekend in between.
+
+        The Monday request should show sandwich days for Sat–Sun when the leave
+        policy has ``applySandwichOnWeekends`` enabled.
+        """
+        self._submit_sandwich_leave_request(
+            leave_type_name=leave_type_name,
+            leave_type_code=leave_type_code,
+            reason=reason_before_weekend,
+            start_date=friday,
+            end_date=friday,
+            start_session=start_session,
+            end_session=end_session,
+        )
+        self._submit_sandwich_leave_request(
+            leave_type_name=leave_type_name,
+            leave_type_code=leave_type_code,
+            reason=reason_after_weekend,
+            start_date=monday,
+            end_date=monday,
+            start_session=start_session,
+            end_session=end_session,
+            expect_sandwich=True,
+        )
