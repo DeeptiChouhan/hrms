@@ -1,8 +1,6 @@
-import re
 import time
 
 import pytest
-from playwright.sync_api import expect
 
 from api.reset_api import (
     delete_employee_by_work_email_if_exists,
@@ -96,28 +94,7 @@ def test_add_employee_accept_invite_set_password_and_login(page):
 
     page.context.clear_cookies()
 
+    # Same work email as registration (e.g. deepti.chouhan+1a@encoresky.com) + invite password.
     employee_login_email = NEW_EMPLOYEE_LOGIN_EMAIL or emp_data["work_email"]
-    print(f"\n[invite] Password set on invite form: {NEW_EMPLOYEE_PASSWORD!r}")
-    print(f"[invite] Logging in as employee: {employee_login_email!r}")
     login_page.navigate_to_sign_in()
-    login_page.login_input(employee_login_email, NEW_EMPLOYEE_PASSWORD)
-    login_page.click_login()
-    for attempt in range(3):
-        try:
-            expect(page).to_have_url(re.compile(r"dashboard", re.I), timeout=20_000)
-            expect(page.get_by_role("link", name="Dashboard")).to_be_visible(timeout=12_000)
-            break
-        except AssertionError:
-            if login_page.error_message.is_visible(timeout=3_000):
-                pytest.fail(
-                    f"Employee login failed with 'Invalid credentials' for {employee_login_email!r}. "
-                    "Confirm the invite flow completed (check invite step passed), "
-                    "and that NEW_EMPLOYEE_PASSWORD in .env matches what was set on the invite form. "
-                    "If HRMS expects the personal email at sign-in, set NEW_EMPLOYEE_LOGIN_EMAIL in .env."
-                )
-            if attempt < 2:
-                page.wait_for_timeout(2_000)
-                login_page.login_input(employee_login_email, NEW_EMPLOYEE_PASSWORD)
-                login_page.click_login()
-            else:
-                raise
+    login_page.login(employee_login_email, NEW_EMPLOYEE_PASSWORD)

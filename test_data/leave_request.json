@@ -1,0 +1,9 @@
+{
+  "email": "deepti.chouhan+automation_user@encoresky.com",
+  "password": "Test@123",
+  "leave_type_name": "leave_type_Automation",
+  "leave_type_code": "00A1",
+  "reason": "Appropriate reason for testing of leave request automation.",
+  "start_session": "First half",
+  "end_session": "Second half"
+}

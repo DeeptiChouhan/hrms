@@ -8,5 +8,10 @@
     "department": "Development (D010)",
     "direct_lead": "Ravindra Singh Gautam - EMP-2",
     "hr_manager": "FC Patidar - EMP-1",
-    "dob": "11-11-1997"
+    "dob": "11-11-1997",
+    "greeting_preferences_dob": "11-10-1998",
+    "aadhaar_number": "999941057058",
+    "pan_number": "ABCDE1234F",
+    "esic_number": "1000123456",
+    "uan_number": "100123456789"
 }

@@ -18,3 +18,6 @@ def load_employee_data() -> dict[str, Any]:
 
 def load_test_data() -> dict[str, Any]:
     return _read_json(_REPO_ROOT / "test_data" / "test_data.json")
+
+def load_leave_request_data() -> dict[str, Any]:
+    return _read_json(_REPO_ROOT / "test_data" / "leave_request.json")
