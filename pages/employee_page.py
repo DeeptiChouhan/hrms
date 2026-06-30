@@ -93,6 +93,32 @@ class EmployeePage:
         """Required ``preferredDob`` field (UI: DOB (to greet))."""
         self._fill_date_input(self.greeting_preferences_dob_input, preferred_dob)
 
+    def _select_searchable_dropdown(self, dropdown, option_text: str) -> None:
+        """MUI select with in-list search (direct lead, HR manager, etc.)."""
+        dropdown.scroll_into_view_if_needed()
+        dropdown.click(timeout=10_000)
+        listbox = self.page.locator('ul[role="listbox"]')
+        expect(listbox).to_be_visible(timeout=15_000)
+
+        search_term = (
+            option_text.split(" - EMP-", 1)[0].strip()
+            if " - EMP-" in option_text
+            else option_text
+        )
+        search = self.page.locator('input[placeholder="Search.."]').or_(
+            self.page.get_by_placeholder(SEARCH_PLACEHOLDER)
+        )
+        if search.count() > 0:
+            search.first.fill(search_term)
+        else:
+            self.page.keyboard.type(search_term)
+
+        option = self.page.get_by_role("option", name=re.compile(re.escape(option_text), re.I))
+        if option.count() == 0:
+            option = self.page.locator("li", has_text=option_text)
+        expect(option.first).to_be_visible(timeout=15_000)
+        option.first.click()
+
     def add_employee(self, data: Mapping[str, Any]) -> None:
         self.first_name_input.fill(data["first_name"])
         self.last_name_input.fill(data["last_name"])
@@ -118,19 +144,25 @@ class EmployeePage:
         self.fill_greeting_preferences_dob(greeting_dob)
 
         self.designation_dropdown.click()
-        self.page.get_by_role("option", name=re.compile(r"Junior\s+software\s+engineer", re.I)).first.click()
+        designation = str(data.get("designation", "Junior software engineer"))
+        self.page.get_by_role(
+            "option", name=re.compile(re.escape(designation), re.I)
+        ).first.click()
+
         self.department_dropdown.click()
-        self.page.click("text=Development (D010)")
-        self.direct_lead_dropdown.click()
-        self.page.click("text=Ravindra Singh Gautam - EMP-2")
-        self.hr_manager_dropdown.click()
-        self.page.locator('ul[role="listbox"]').wait_for()
-        search = self.page.locator('input[placeholder="Search.."]').or_(self.page.get_by_placeholder(SEARCH_PLACEHOLDER))
-        if search.count() > 0:
-            search.first.fill("FC Patidar")
-        else:
-            self.page.keyboard.type("FC Patidar")
-        self.page.locator("li", has_text="FC Patidar - EMP-1").click()
+        department = str(data.get("department", "Development (D010)"))
+        self.page.get_by_role(
+            "option", name=re.compile(re.escape(department), re.I)
+        ).first.click()
+
+        self._select_searchable_dropdown(
+            self.direct_lead_dropdown,
+            str(data.get("direct_lead", "")),
+        )
+        self._select_searchable_dropdown(
+            self.hr_manager_dropdown,
+            str(data.get("hr_manager", "")),
+        )
 
         today = datetime.today().strftime("%d-%m-%Y")
         probation = (datetime.today() + timedelta(days=180)).strftime("%d-%m-%Y")
